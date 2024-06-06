@@ -8,6 +8,11 @@ log() {
 	wifilog "Hotspot Initialize" "$@"
 }
 
+ifname1="ifname"
+if [ -e /etc/newstyle ]; then
+	ifname1="device"
+fi
+
 do_zone() {
 	local config=$1
 	local name
@@ -34,7 +39,19 @@ do_radio() {
 
 	config_get channel $1 channel
 	config_get hwmode $1 hwmode
-	if [ $channel -lt 20 ]; then
+	config_get band $1 band
+	fr="1"
+	if [ -z "$hwmode" ]; then
+		if [ "$band" = "2g" ]; then
+			fr="0"
+		fi
+	else
+		hw=$(echo "$hwmode" | grep "g")
+		if [ ! -z "$hw" ]; then
+			fr="0"
+		fi
+	fi
+	if [ "$fr" = "0" ]; then
 			uci set wireless.wwan2=wifi-iface
 			uci set wireless.wwan2.device=$config
 			uci set wireless.wwan2.network="wwan2"
@@ -69,6 +86,9 @@ log "Hotspot Firewall"
 		uci set network.wwan26=interface
 		uci set network.wwan26.proto=dhcpv6 
 		uci set network.wwan26.metric='2'
+		uci set network.wwan26.${ifname1}='@wwan2'
+		uci set network.wwan26.reqaddress='try'
+		uci set network.wwan26.reqprefix='auto'
 	fi
 	PRO=$(uci get network.wwan5.proto)
 	if [ -z $PRO ]; then
@@ -78,6 +98,9 @@ log "Hotspot Firewall"
 		uci set network.wwan56=interface
 		uci set network.wwan56.proto=dhcpv6 
 		uci set network.wwan56.metric='2'
+		uci set network.wwan56.${ifname1}='@wwan5'
+		uci set network.wwan56.reqaddress='try'
+		uci set network.wwan56.reqprefix='auto'
 		uci commit network
 	fi
 	config_load firewall

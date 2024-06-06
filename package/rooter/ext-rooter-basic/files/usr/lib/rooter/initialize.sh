@@ -67,25 +67,11 @@ firstboot() {
 	config_foreach do_zone zone
 
 	source /etc/openwrt_release
-	if [ $DISTRIB_RELEASE = "SNAPSHOT" ]; then
-		DISTRIB_RELEASE="21.02.2"
+	DR=$DISTRIB_RELEASE
+	if [ $DR = "SNAPSHOT" ]; then
+		DR="21.02.2"
 	fi
-	tone=$(echo "$DISTRIB_RELEASE" | grep "21.02")
-	
-#	if [ ! -e /etc/ipv6disable ]; then
-#		uci set dhcp.lan.master='1'
-#		uci set dhcp.lan.ra='hybrid'
-#		uci set dhcp.lan.ra_flags='none'
-#		uci set dhcp.lan.dhcpv6='hybrid'
-#		uci set dhcp.lan.ra_management='1'
-#	else
-#		uci set dhcp.lan.ra=''
-#		uci set dhcp.lan.dhcpv6=''
-#		uci set dhcp.lan.ra_management=''
-#		uci set dhcp.lan.ra_flags='none'
-#	fi
-#	uci commit dhcp
-#	/etc/init.d/dnsmasq restart
+	tone=$(echo "$DR" | grep "2")
 }
 
 if [ -e /tmp/installing ]; then
@@ -111,7 +97,7 @@ uci commit modem
 source /etc/openwrt_release
 rm -f /etc/openwrt_release
 if [ $DISTRIB_RELEASE = "SNAPSHOT" ]; then
-	DISTRIB_RELEASE="21.02.2"
+	DISTRIB_RELEASE="Master"
 fi
 if [ -e /etc/custom ]; then
 	lua $ROOTER/customname.lua
@@ -129,7 +115,7 @@ echo 'DISTRIB_CODENAME="'"$DISTRIB_CODENAME"'"' >> /etc/openwrt_release
 echo 'DISTRIB_TARGET="'"$DISTRIB_TARGET"'"' >> /etc/openwrt_release
 echo 'DISTRIB_DESCRIPTION="'"$DISTRIB_DESCRIPTION"'"' >> /etc/openwrt_release
 
-/usr/lib/rooter/luci/external.sh &
+#/usr/lib/rooter/luci/external.sh &
 
 MODSTART=1
 WWAN=0
@@ -197,11 +183,17 @@ while [ $COUNTER -le $MODCNT ]; do
 	uci set network.wan$COUNTER.proto=dhcp
 	uci set network.wan$COUNTER.metric=$COUNTER"0"
 	uci set network.wan$COUNTER.${ifname1}="wan"$COUNTER
+	
+	uci -q delete network.wan$COUNTER"_6"
+	uci set network.wan$COUNTER'_6'=interface
+	uci set network.wan$COUNTER'_6'.proto=none
+	uci set network.wan$COUNTER'_6'.${ifname1}="@wan$COUNTER"
+	uci set network.wan$COUNTER'_6'.metric=$COUNTER"0"
 
 	if [ -e /etc/config/mwan3 ]; then
 		ENB=$(uci -q get mwan3.wan$COUNTER.enabled)
 		if [ ! -z $ENB ]; then
-			uci set mwan3.wan$COUNTER.enabled=0
+			uci set mwan3.wan$COUNTER.enabled=1
 		fi
 	fi
 
@@ -295,13 +287,8 @@ fi
 #
 # Added modems to various drivers
 #
-#source /etc/flash
-#if [ "$FLASH" = "4" ]; then
-#fi
-#echo "413c 81b6" > /sys/bus/usb-serial/drivers/option1/new_id
 echo "1546 1146" > /sys/bus/usb-serial/drivers/option1/new_id
 echo "106c 3718" > /sys/bus/usb-serial/drivers/option1/new_id
-#echo "1199 9091" > /sys/bus/usb-serial/drivers/option1/new_id
 
 # end of bootup
 echo "0" > /tmp/bootend.file
@@ -314,6 +301,5 @@ chmod 644 /etc/dropbear/authorized_keys 2>/dev/null
 
 if [ ! -z $tone ]; then
 	[ -e /etc/newstyle ] || touch /etc/newstyle
-	#reboot -f
 fi
 

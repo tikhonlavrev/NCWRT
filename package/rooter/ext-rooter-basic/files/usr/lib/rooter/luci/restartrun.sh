@@ -7,6 +7,76 @@ log() {
 	modlog "Modem Restart/Disconnect $CURRMODEM" "$@"
 }
 
+pwrtoggle() {
+	toggle="0"
+	bn=$(cat /tmp/sysinfo/board_name)
+	bnx=$(echo "$bn" | grep "mk01k21")
+	if [ ! -z "$bnx" ]; then
+		i=496
+		echo $i > /sys/class/gpio/export
+		echo "out" > /sys/class/gpio/gpio$i/direction
+		echo "1" > /sys/class/gpio/gpio$i/value
+		sleep 5
+		echo "0" > /sys/class/gpio/gpio$i/value
+		log "Power Toggle"
+		toggle="1"
+		return
+	fi
+	bnx=$(echo "$bn" | grep "x3000")
+	if [ ! -z "$bnx" ]; then
+		echo "0" > /sys/class/gpio/cellular-control/value
+		sleep 2
+		echo "1" > /sys/class/gpio/cellular-control/value
+		log "Power Toggle"
+		toggle="1"
+		return
+	fi
+	bnx=$(echo "$bn" | grep "z8102ax-128m")
+	if [ ! -z "$bnx" ]; then
+		DEV=$(uci get modem.modem$CURRMODEM.device)
+		if [ $DEV = "2-1.2" ]; then
+			echo "0" > /sys/class/gpio/modem2/value
+			sleep 2
+			echo "1" > /sys/class/gpio/modem2/value
+		else
+			echo "0" > /sys/class/gpio/modem1/value
+			sleep 2
+			echo "1" > /sys/class/gpio/modem1/value
+		fi
+		log "Power Toggle"
+		toggle="1"
+		return
+	fi
+	bnx=$(echo "$bn" | grep "ws1698")
+	if [ ! -z "$bnx" ]; then
+		i=460
+		echo $i > /sys/class/gpio/export
+		echo "out" > /sys/class/gpio/gpio$i/direction
+		echo "0" > /sys/class/gpio/gpio$i/value
+		sleep 3
+		echo "1" > /sys/class/gpio/gpio$i/value
+		log "Power Toggle"
+		toggle="1"
+		return
+	fi
+	bnx=$(echo "$bn" | grep "wg1602")
+	if [ ! -z "$bnx" ]; then
+		DEV=$(uci get modem.modem$CURRMODEM.device)
+		if [ $DEV = "1-1" ]; then
+			echo "0" > /sys/class/gpio/4g1-pwr/value
+			sleep 2
+			echo "1" > /sys/class/gpio/4g1-pwr/value
+		else
+			echo "0" > /sys/class/gpio/4g2-pwr/value
+			sleep 2
+			echo "1" > /sys/class/gpio/4g2-pwr/value
+		fi
+		log "Power Toggle"
+		toggle="1"
+		return
+	fi
+}
+
 ifname1="ifname"
 if [ -e /etc/newstyle ]; then
 	ifname1="device"
@@ -25,30 +95,31 @@ jkillall chkconn.sh
 echo "0" > /tmp/usbwait
 uVid=$(uci get modem.modem$CURRMODEM.uVid)
 uPid=$(uci get modem.modem$CURRMODEM.uPid)
+pwrtoggle
+
 if [ $uVid != "2c7c" ]; then
-	if [ ! -z "$CPORT" ]; then
-		ATCMDD="AT+CFUN=1,1"
-		OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+	if [ $uVid = "0e8d" -o $uVid = "8087" -o $uVid = "2cb7" -o $uVid = "1508" ]; then
+		if [ ! -z "$CPORT" ]; then
+			ATCMDD="AT+CFUN=15"
+			OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+		fi
+	else
+		if [ ! -z "$CPORT" ]; then
+			ATCMDD="AT+CFUN=1,1"
+			OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+		fi
 	fi
 	log "Hard modem reset done $OX"
 else
 	if [ ! -z "$CPORT" ]; then
 		ATCMDD="AT+QPOWD=0"
 		OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+		ATCMDD="AT+CFUN=1,1"
+		OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
 	fi
 	log "Hard modem reset done $OX"
 fi
-bn=$(cat /tmp/sysinfo/board_name)
-bn=$(echo "$bn" | grep "mk01k21")
-if [ ! -z "$bn" ]; then
-	i=496
-	echo $i > /sys/class/gpio/export
-	echo "out" > /sys/class/gpio/gpio$i/direction
-	echo "1" > /sys/class/gpio/gpio$i/value
-	sleep 5
-	echo "0" > /sys/class/gpio/gpio$i/value
-	log "Power Toggle"
-fi
+
 ifdown wan$INTER
 uci delete network.wan$CURRMODEM
 uci set network.wan$CURRMODEM=interface

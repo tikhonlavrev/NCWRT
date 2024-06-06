@@ -54,6 +54,8 @@ make_connect() {
 		echo "-"
 		echo "-"
 		echo "-"
+		echo "-"
+		echo "-"
 	} > /tmp/statusx$CURRMODEM.file
 	mv -f /tmp/statusx$CURRMODEM.file /tmp/status$CURRMODEM.file
 }
@@ -63,7 +65,6 @@ make_signal() {
 		if [ -e $ROOTER/provchk.sh ]; then
 			$ROOTER/provchk.sh $COPS $CURRMODEM
 			source /tmp/cops$CURRMODEM.file
-			rm -f /tmp/cops$CURRMODEM.file
 		fi
 		echo "$COMMPORT"
 		echo "$CSQ"
@@ -100,6 +101,7 @@ make_signal() {
 		echo "$SINR"
 		echo "$LATITUDE"
 		echo "$LONGITUDE"
+		echo "$INTER"
 	} > /tmp/statusx$CURRMODEM.file
 	mv -f /tmp/statusx$CURRMODEM.file /tmp/status$CURRMODEM.file
 	if [ -e $ROOTER/modem-led.sh ]; then
@@ -111,17 +113,14 @@ get_basic() {
 	$ROOTER/signal/basedata.sh $CURRMODEM $COMMPORT
 	if [ -e /tmp/base$CURRMODEM.file ]; then
 		source /tmp/base$CURRMODEM.file
-		rm -f /tmp/base$CURRMODEM.file
 	fi
 	$ROOTER/signal/celldata.sh $CURRMODEM $COMMPORT
 	if [ -e /tmp/cell$CURRMODEM.file ]; then
 		source /tmp/cell$CURRMODEM.file
-		rm -f /tmp/cell$CURRMODEM.file
 	fi
 	lua $ROOTER/signal/celltype.lua "$MODEM" $CURRMODEM
 	if [ -e /tmp/celltype$CURRMODEM ]; then
 		source /tmp/celltype$CURRMODEM
-		rm -f /tmp/celltype$CURRMODEM
 	fi
 }
 
@@ -130,7 +129,6 @@ while [ 1 = 1 ]; do
 	get_basic
 	if [ -e /tmp/port$CURRMODEM.file ]; then
 		source /tmp/port$CURRMODEM.file
-		rm -f /tmp/port$CURRMODEM.file
 		COMMPORT="/dev/ttyUSB"$PORT
 		uci set modem.modem$CURRMODEM.commport=$PORT
 		make_connect
@@ -144,12 +142,10 @@ while [ 1 = 1 ]; do
 			$ROOTER/signal/celldata.sh $CURRMODEM $COMMPORT
 			if [ -e /tmp/cell$CURRMODEM.file ]; then
 				source /tmp/cell$CURRMODEM.file
-				rm -f /tmp/cell$CURRMODEM.file
 			fi
 		fi
 		if [ -e /tmp/port$CURRMODEM.file ]; then
 			source /tmp/port$CURRMODEM.file
-			rm -f /tmp/port$CURRMODEM.file
 			COMMPORT="/dev/ttyUSB"$PORT
 			uci set modem.modem$CURRMODEM.commport=$PORT
 			make_connect
@@ -230,8 +226,11 @@ while [ 1 = 1 ]; do
 			"1e0e" )
 				$ROOTER/common/simcomdata.sh $CURRMODEM $COMMPORT
 				;;
-			"8087" )
+			"8087"|"0e8d" )
 				if [ $PROD = "095a" ]; then
+					$ROOTER/common/fibocomdata.sh $CURRMODEM $COMMPORT
+				fi
+				if [ $PROD = "7126" -o $PROD = "7127" ]; then
 					$ROOTER/common/fibocomdata.sh $CURRMODEM $COMMPORT
 				fi
 				;;
@@ -251,14 +250,14 @@ while [ 1 = 1 ]; do
 			LONGITUDE="-"
 			if [ -e /tmp/signal$CURRMODEM.file ]; then
 				source /tmp/signal$CURRMODEM.file
-				rm -f /tmp/signal$CURRMODEM.file
 			fi
 			if [ -e /tmp/phonenumber$CURRMODEM ]; then
 				source /tmp/phonenumber$CURRMODEM
-				rm -f /tmp/phonenumber$CURRMODEM
 			fi
-			if [ -e /tmp/gpsdata ]; then
-				source /tmp/gpsdata
+			if [ ! -e /etc/config/gps ]; then
+				if [ -e /tmp/gpsdata ]; then
+					source /tmp/gpsdata
+				fi
 			fi
 			make_signal
 			uci set modem.modem$CURRMODEM.cmode="1"
@@ -271,10 +270,10 @@ while [ 1 = 1 ]; do
 			fi
 		fi
 	fi
-	if [ -e /etc/netspeed ]; then
+	if [ ! -e /etc/netspeed ]; then
 		NETSPEED=60
 	else
-		NETSPEED=10
+		NETSPEED=$(cat /etc/netspeed)
 	fi
 	CURRTIME=$(date +%s)
 	SLEEPTIME=$(($(echo $NETSPEED) - ($(echo $CURRTIME) - $(echo $STARTIMEX))))

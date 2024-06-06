@@ -7,7 +7,14 @@ log() {
 	modlog "Lock Band $CURRMODEM" "$@"
 }
 
+restart=$(uci -q get custom.bandlock.restart)
+if [ -z "$restart" ]; then
+	restart="1"
+fi
 RESTART="1"
+if [ "$restart" = "0" ]; then
+	RESTART="0"
+fi
 
 ifname1="ifname"
 if [ -e /etc/newstyle ]; then
@@ -171,9 +178,9 @@ export TIMEOUT="5"
 case $uVid in
 	"2c7c" )
 		MODT="1"
-		if [ -z "$2" ]; then
-			RESTART="1"
-		fi
+		#if [ -z "$2" ]; then
+		#	RESTART="1"
+		#fi
 		M5=""
 		M2='AT+QCFG="band",0,'$mask',0'
 		if [ $uPid = 0620 ]; then
@@ -226,7 +233,7 @@ case $uVid in
 		if [ $uPid = 0306 ]; then
 			RESTART="1"
 		fi
-		if [ $uPid = 0800 -o $uPid = 0900 -o $uPid = 0801 ]; then
+		if [ $uPid = 0800 -o $uPid = 0900 -o $uPid = 0801 -o $uPid = 0122 ]; then
 			if [ ! -z "$mask" ]; then
 				fibdecode $mask 1 1
 			else
@@ -335,7 +342,7 @@ case $uVid in
 		if [ -e /etc/fake ]; then
 			exit 0
 		fi
-		if "$flg" = "0" ]; then
+		if [ "$flg" = "0" ]; then
 			OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$M1")
 			log "$OX"
 			OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$M2")
@@ -351,7 +358,7 @@ case $uVid in
 		fi
 		OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
 	;;
-	"8087"|"2cb7" )
+	"8087"|"2cb7"|"0e8d" )
 		MODT="2"
 		FM150=""
 		if [ $uVid = 2cb7 ]; then
@@ -364,29 +371,37 @@ case $uVid in
 		else
 			COMM="XACT"
 		fi
-		ATCMDD='AT+'$COMM'?'
-		log " "
-		log " Get Current Bands : $ATCMDD"
-		log " "
-		OX=$($ROOTER/gcom/gcom-locked "/dev/ttyUSB$CPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
-		log " "
-		log " Get Current Bands Response : $OX"
-		log " "
+		if [ $uVid = 0e8d ]; then
+			COMM="GTACT"
+		fi
 
 		lte=""
 		if [ ! -z $mask ]; then
 			fibdecode $mask 1 0
 			lte=","$lst
-			fi
+		fi
 		L1="4,2,1"
 		lst=""
-		if [ ! -z $FM150 ]; then
-			L1="17,6,"
-			if [ ! -z $mask5g ]; then
+		if [ -n "$FM150" ]; then
+			if [ -n "$lte" ]; then
+				L1="17,6,"
+			else
+				L1="14,,"
+			fi
+			if [ -n "$mask5g" ]; then
 				fibdecode $mask5g 5 0
 				lst=","$lst
 			else
 				L1="4,3,"
+			fi
+		fi
+		if [ $uVid = 0e8d ]; then
+			L1="17,3,6"
+			if [ ! -z $mask5g ]; then
+				fibdecode $mask5g 5 0
+				lst=","$lst
+			else
+				L1="4,3,3"
 			fi
 		fi
 		ATCMDD="AT+""$COMM"="$L1$lte$lst"

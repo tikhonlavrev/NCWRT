@@ -32,7 +32,6 @@ nr_bw() {
 }
 
 OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "quectelinfo.gcom" "$CURRMODEM")
-
 OX=$(echo $OX | tr 'a-z' 'A-Z')
 
 RSRP=""
@@ -182,12 +181,7 @@ case $RAT in
 					CHANNEL=$CHANNEL", -"
 				fi
 				RSCP=$RSCP" dBm<br />"$(echo $QENG5 | cut -d, -f5)
-				SINRR=$(echo $QENG5 | cut -d, -f6 | grep -o "[0-9]\{1,3\}")
-				if [ -n "$SINRR" ]; then
-					if [ $SINRR -le 30 ]; then
-						SINR=$SINR"<br />"$((($(echo $SINRR) * 2) -20))" dB"
-					fi
-				fi
+				SINR=$SINR"<br />"$(echo $QENG5 | cut -d, -f6)" dB"
 				ECIO=$ECIO" (4G) dB<br />"$(echo $QENG5 | cut -d, -f7)" (5G) "
 			fi
 		fi
@@ -197,7 +191,9 @@ case $RAT in
 			if [ -n "$QCA" ]; then
 				QCA=$(echo $QCA | grep -o "\"S[CS]\{2\}\"[-0-9A-Z,\"]\+")
 				for QCAL in $(echo "$QCA"); do
-					if [ $(echo "$QCAL" | cut -d, -f7) = "2" ]; then
+					CAnr=$(echo "$QCAL" | grep -o "NR5G")
+					CAstat=$(echo "$QCAL" | cut -d, -f7)
+					if [ "$CAstat" == "2" -o -n "$CAnr" ]; then
 						SCHV=$(echo $QCAL | cut -d, -f2 | grep -o "[0-9]\+")
 						SRATP="B"
 						if [ -n "$SCHV" ]; then
@@ -220,10 +216,18 @@ case $RAT in
 									* )
 										CATYPE="CA" ;;
 								esac
-								if [ $BWD -gt 14 ]; then
-									LBAND=$LBAND" ("$CATYPE", Bandwidth "$(($(echo $BWD) / 5))" MHz)"
+								if [ "$SRATP" == "n" ]; then
+									BWsave="$BW"
+									BW="$BWD"
+									nr_bw
+									LBAND=$LBAND" ("$CATYPE", Bandwidth "$(echo $BW)" MHz)"
+									BW="$BWsave"
 								else
-									LBAND=$LBAND" ("$CATYPE", Bandwidth 1.4 MHz)"
+									if [ $BWD -gt 14 ]; then
+										LBAND=$LBAND" ("$CATYPE", Bandwidth "$(($(echo $BWD) / 5))" MHz)"
+									else
+										LBAND=$LBAND" ("$CATYPE", Bandwidth 1.4 MHz)"
+									fi
 								fi
 							fi
 							LBAND=$LBAND
@@ -256,12 +260,22 @@ case $RAT in
 				CSQ=$((($RSSI + 113) / 2))
 				CSQ_RSSI=$RSSI" dBm"
 			fi
-			SINRR=$(echo $QENG5 | cut -d, -f15 | grep -o "[0-9]\{1,3\}")
-			if [ -n "$SINRR" ]; then
-				if [ $SINRR -le 30 ]; then
-					SINR=$((($(echo $SINRR) * 2) -20))" dB"
-				fi
-			fi
+			SINR=$(echo $QENG5 | cut -d, -f15 | grep -o "[0-9]\{1,3\}")" dB"
+		fi
+		if [ -n "$QCA" ]; then
+			QCA=$(echo $QCA | grep -o "\"S[CS]\{2\}\",[0-9]\{6\},[0-9]\{1,2\},\"NR5G,BAND,[0-9]\{1,3\}\",2,\+")
+			for QCAL in $(echo "$QCA"); do
+				SLBV=$(echo $QCAL | cut -d, -f6 | grep -o "[0-9]\{1,3\}")
+				LBAND=$LBAND"<br />n"$SLBV
+				BWD=$(echo $QCAL | cut -d, -f3 | grep -o "[0-9]\{1,2\}")
+				BWsave="$BW"
+				BW="$BWD"
+				nr_bw
+				LBAND=$LBAND" ("CA", Bandwidth "$(echo $BW)" MHz)"
+				BW="$BWsave"
+				LBAND=$LBAND
+				PCI="$PCI, "$(echo $QCAL | cut -d, -f8)
+			done
 		fi
 		;;
 esac

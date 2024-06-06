@@ -20,6 +20,8 @@ m.on_after_commit = function(self)
 	end
 end
 
+m:section(SimpleSection).template = "rooter/profile"
+
 if profsave == "1" then
 	if fs.stat("/usr/lib/country/mccdata") then
 		m:section(SimpleSection).template = "rooter/country"
@@ -60,9 +62,10 @@ ma = di:taboption(this_tab, Value, "apn", "APN :");
 ma.rmempty = true;
 ma.default = ""
 
-tt = di:taboption(this_tab, ListValue, "ttl", translate("Custom TTL Value :"))
+tt = di:taboption(this_tab, ListValue, "ttl", translate("Custom IPv4 TTL Value :"))
 tt:value("0", translate("Use Current Value"))
 tt:value("1", translate("No TTL Value"))
+tt:value("2", translate("Custom Value"))
 tt:value("63", "TTL 63")
 tt:value("64", "TTL 64")
 tt:value("65", "TTL 65")
@@ -70,8 +73,34 @@ tt:value("66", "TTL 66")
 tt:value("67", "TTL 67")
 tt:value("88", "TTL 88")
 tt:value("117", "TTL 117")
-tt:value("TTL-INC 1", "TTL-INC 1")
+tt:value("128", "TTL 128")
 tt.default = "0"
+
+ttc = di:taboption(this_tab, Value, "cttl", translate("TTL Custom Value :")); 
+ttc.optional=false; 
+ttc.rmempty = true;
+ttc.default = "65"
+ttc:depends("ttl", "2")
+
+tth = di:taboption(this_tab, ListValue, "hl", translate("Custom IPv6 HL Value :"))
+tth:value("0", translate("Use TTL Value"))
+tth:value("1", translate("No HL Value"))
+tth:value("2", translate("Custom Value"))
+tth:value("63", "HL 63")
+tth:value("64", "HL 64")
+tth:value("65", "HL 65")
+tth:value("66", "HL 66")
+tth:value("67", "HL 67")
+tth:value("88", "HL 88")
+tth:value("117", "HL 117")
+tth:value("128", "HL 128")
+tth.default = "0"
+
+ttch = di:taboption(this_tab, Value, "chl", translate("HL Custom Value :")); 
+ttch.optional=false; 
+ttch.rmempty = true;
+ttch.default = "65"
+ttch:depends("hl", "2")
 
 tnl = di:taboption(this_tab, ListValue, "ttloption", translate("TTL Settings"));
 tnl:value("0", translate("POSTROUTING and PREROUTING (Default)"))
@@ -154,6 +183,11 @@ mf1 = di:taboption(this_taba, ListValue, "watchdog", translate("Disable Connecti
 mf1:value("0", translate("No"))
 mf1:value("1", translate("Yes"))
 mf1.default=0
+
+mf2 = di:taboption(this_taba, ListValue, "detect", translate("Stop after Detection :"));
+mf2:value("0", translate("No"))
+mf2:value("1", translate("Yes"))
+mf2.default=0
 		
 mf = di:taboption(this_taba, ListValue, "ppp", translate("Force Modem to PPP Protocol :"));
 mf:value("0", translate("No"))
@@ -197,24 +231,12 @@ mlog:value("0", translate("No"))
 mlog:value("1", translate("Yes"))
 mlog.default=0
 
-if nixio.fs.access("/etc/config/mwan3") then
-	mlb = di:taboption(this_taba, ListValue, "lb", translate("Enable Load Balancing at Connection :"));
-	mlb:value("0", translate("No"))
-	mlb:value("1", translate("Yes"))
-	mlb.default=1
-end
-
 mtu = di:taboption(this_taba, Value, "mtu", translate("Custom MTU :"),
 		translate("Acceptable values: 1420-1500. Size for Custom MTU. This may have to be adjusted for certain ISPs"));
 mtu.optional=true
 mtu.rmempty = true
 mtu.default = "1500"
 mtu.datatype = "range(1420, 1500)"
-
-mat = di:taboption(this_taba, ListValue, "at", translate("Enable Custom AT Startup Command at Connection :"));
-mat:value("0", translate("No"))
-mat:value("1", translate("Yes"))
-mat.default=0
 
 matc = di:taboption(this_taba, Value, "atc", translate("Custom AT Startup Command :"));
 matc.optional=false;
@@ -527,6 +549,7 @@ end
 		tt = s:taboption(this_ctab, ListValue, "ttl", translate("Custom TTL Value :"))
 		tt:value("0", translate("Use Current Value"))
 		tt:value("1", translate("No TTL Value"))
+		tt:value("2", translate("Custom TTL Value"))
 		tt:value("63", "TTL 63")
 		tt:value("64", "TTL 64")
 		tt:value("65", "TTL 65")
@@ -534,8 +557,34 @@ end
 		tt:value("67", "TTL 67")
 		tt:value("88", "TTL 88")
 		tt:value("117", "TTL 117")
-		tt:value("TTL-INC 1", "TTL-INC 1")
 		tt.default = "0"
+		
+		ttcc = s:taboption(this_ctab, Value, "cttl", translate("Custom TTL Value :")); 
+		ttcc.optional=false; 
+		ttcc.rmempty = true;
+		ttcc.default = "65"
+		ttcc:depends("ttl", "2")
+		
+		
+		tthc = s:taboption(this_ctab, ListValue, "hl", translate("Custom HL Value :"))
+		tthc:value("0", translate("Use TTL Value"))
+		tthc:value("1", translate("No HL Value"))
+		tthc:value("2", translate("Custom HL Value"))
+		tthc:value("63", "HL 63")
+		tthc:value("64", "HL 64")
+		tthc:value("65", "HL 65")
+		tthc:value("66", "HL 66")
+		tthc:value("67", "HL 67")
+		tthc:value("88", "HL 88")
+		tthc:value("117", "HL 117")
+		tthc:value("128", "HL 128")
+		tthc.default = "0"
+		
+		ttchc = s:taboption(this_ctab, Value, "chl", translate("Custom HL Value :")); 
+		ttchc.optional=false; 
+		ttchc.rmempty = true;
+		ttchc.default = "65"
+		ttchc:depends("hl", "2")
 
 		ttnl = s:taboption(this_ctab, ListValue, "ttloption", translate("TTL Settings"));
 		ttnl:value("0", translate("POSTROUTING and PREROUTING (Default)"))
@@ -687,11 +736,6 @@ end
 		mtu.rmempty = true
 		mtu.default = "1500"
 		mtu.datatype = "range(1420, 1500)"
-
-		cmat = s:taboption(this_ctaba, ListValue, "at", translate("Enable Custom AT Startup Command at Connection :"));
-		cmat:value("0", translate("No"))
-		cmat:value("1", translate("Yes"))
-		cmat.default=0
 
 		cmatc = s:taboption(this_ctaba, Value, "atc", translate("Custom AT Startup Command :"));
 		cmatc.optional=false;

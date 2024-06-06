@@ -5,9 +5,14 @@ ROOTER=/usr/lib/rooter
 MODEMTYPE=$1
 NETMODE=$2
 
-# log() {
+
+# https://pastebin.com/HyqJszfc
+
+ log() {
 	modlog "ModeChange $CURRMODEM" "$@"
-# }
+ }
+
+
 
 CURRMODEM=$(uci get modem.general.miscnum)
 uci set modem.modem$CURRMODEM.cmode="0"
@@ -17,6 +22,8 @@ uci commit modem
 MODEMTYPE=$(uci get modem.modem$CURRMODEM.modemtype)
 COMMPORT="/dev/ttyUSB"$(uci get modem.modem$CURRMODEM.commport)
 
+#
+RESETmodem=true
 # ZTE
 if [ $MODEMTYPE -eq 1 ]; then
 	case $NETMODE in
@@ -121,7 +128,7 @@ if [ $MODEMTYPE -eq 6 ]; then
 	fi
 	NEWFMT=false
 	if [ "$idV" = "2c7c" ]; then
-		if [ "$idP" = "0800" -o "$idP" = "0620" -o "$idP" = "030b" -o "$idP" = "0801" -o "$idP" = "0900" ]; then
+		if [ "$idP" = "0800" -o "$idP" = "0620" -o "$idP" = "030b" -o "$idP" = "0801" -o "$idP" = "0900" -o "$idP" = "0122" ]; then
 			NEWFMT=true
 		fi
 	fi
@@ -200,6 +207,10 @@ if [ $MODEMTYPE -eq 8 ]; then
 			ATC="AT\$QCNSP=2,0,0" ;;
 		"7" )
 			ATC="AT\$QCNSP=6,0,0" ;;
+		"8" )
+			ATC="AT^SLMODE=1,6" ;;
+		"9" )
+			ATC="AT^SLMODE=1,4" ;;
 		* )
 			ATC="AT\$QCNSP=0,0,0" ;;
 	esac
@@ -210,29 +221,66 @@ if [ $MODEMTYPE -eq 9 ]; then
 	CURRMODEM=$(uci -q get modem.general.modemnum)
 	idV=$(uci -q get modem.modem$CURRMODEM.idV)
 	idP=$(uci -q get modem.modem$CURRMODEM.idP)
-	idPP=${idP:1:1}
-	if [ "$idPP" = "1" ]; then
+	if [ "$idV" = 0e8d ]; then
+		ATCMDD='AT+GTACT?'
+		OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+		OXX=$(echo $OX" " | grep "+GTACT:" | tr -d '"' | tr " " ",")
+		n=${#OXX}
+		let nn=$n-22
+		NOX=${OXX:18:$nn}
+		L1=$(echo $NOX | cut -d, -f1)
+		L2=$(echo $NOX | cut -d, -f2)
+		L3=$(echo $NOX | cut -d, -f3)
+		st=6
+		if [ "$L1" -gt 9 ]; then
+			st=7
+		fi
+		BND=${NOX:$st}
 		case $NETMODE in
+			"1")
+				ATC="AT+GTACT=10,6,6," ;;
 			"7")
-				ATC="AT+GTRAT=3" ;;
-			"8")
-				ATC="AT+GTRAT=17" ;;
+				ATC="AT+GTACT=2,3,3," ;;
 			"9")
-				ATC="AT+GTRAT=14" ;;
+				ATC="AT+GTACT=14,6,6," ;;
+			"11")
+				ATC="AT+GTACT=17,6,6," ;;
 			*)
-				ATC="AT+GTRAT=10" ;;
+				ATC="AT+GTRAT=10,6,6," ;;
 		esac
+		ATC=$ATC"$BND"
+		$ROOTER/luci/celltype.sh $CURRMODEM
+		uci set modem.modem$CURRMODEM.cmode="1"
+		uci commit modem
+		exit 0
 	else
-		case $NETMODE in
-			"4")
-				ATC="AT+XACT=4,1" ;;
-			"5")
-				ATC="AT+XACT=1" ;;
-			"7")
-				ATC="AT+XACT=2" ;;
-			*)
-				ATC="AT+XACT=4,2" ;;
-		esac
+		idPP=${idP:1:1}
+		if [ "$idPP" = "1" ]; then
+			case $NETMODE in
+				"7")
+					ATC="AT+GTRAT=3" ;;
+				"8")
+					ATC="AT+GTRAT=17" ;;
+				"9")
+					ATC="AT+GTRAT=14" ;;
+				*)
+					ATC="AT+GTRAT=10" ;;
+			esac
+		else
+			case $NETMODE in
+				"4")
+					ATC="AT+XACT=4,1" ;;
+				"5")
+					ATC="AT+XACT=1" ;;
+				"7")
+					ATC="AT+XACT=2" ;;
+				*)
+					ATC="AT+XACT=4,2" ;;
+			esac
+		fi
+		if [ "$idV" == "2cb7" -a "$idP" == "0104" ]; then
+			RESETmodem=false
+		fi
 	fi
 fi
 
@@ -268,9 +316,11 @@ fi
 
 ATCMDD="$ATC"
 OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
-
+log "$OX"
 $ROOTER/luci/celltype.sh $CURRMODEM
 uci set modem.modem$CURRMODEM.cmode="1"
 uci commit modem
 
-$ROOTER/luci/restart.sh $CURRMODEM 11
+if $RESETmodem; then
+	$ROOTER/luci/restart.sh $CURRMODEM 11
+fi

@@ -11,14 +11,14 @@
 		"addons": ["readme.pdf"]
 	},
 	"OMNIA": {
-		"details": "Turris Omnia",
+		"details": "Turris Omnia-2305",
 		"type": "1",
 		"build": "2305",
 		"config": ".config_omnia",
 		"image": "openwrt-mvebu-cortexa9-cznic_turris-omnia-sysupgrade.img.gz",
 		"imagepath": "/mvebu/cortexa9/",
 		"ext": "-upgrade.img.gz",
-		"mod": "Turris-Omnia",
+		"mod": "Turris-Omnia-2305",
 		"addons": ["readme.pdf", "turris-omnia-initramfs.tar.gz", "turris.txt"]
 	},
 	"WG1602-32": {
@@ -43,5 +43,174 @@
 		"mod": "ZBT-WG1608-32M",
 		"ext": "-upgrade.bin",
 		"addons": ["readme.pdf", "readmerecovery.txt"]
+	},
+	"MR8300": {
+		"details": "Linksys MR8300",
+		"type": "2",
+		"build": "2305",
+		"config": ".config_mr8300",
+		"image1": "openwrt-ipq40xx-generic-linksys_mr8300-squashfs-sysupgrade.bin",	
+		"image2": "openwrt-ipq40xx-generic-linksys_mr8300-squashfs-factory.bin",
+		"imagepath": "/ipq40xx/generic/",
+		"mod": "Linksys-MR8300",
+		"ext1": "-upgrade.bin",
+		"ext2": "-factory.bin",
+		"addons": ["readme.pdf"]
+	},
+	"WRX36": {
+		"details": "Dynalink DL-WRX36",
+		"type": "2",
+		"build": "2305",
+		"config": ".config_wrx36",
+		"image1": "openwrt-ipq807x-generic-dynalink_dl-wrx36-squashfs-sysupgrade.bin",	
+		"image2": "openwrt-ipq807x-generic-dynalink_dl-wrx36-initramfs-uImage.itb",
+		"imagepath": "/ipq807x/generic/",
+		"mod": "Dynalink-DL-WRX36",
+		"ext1": "-upgrade.bin",
+		"ext2": "-initramfs.itb",
+		"addons": ["readme.pdf"]
+	},
+	"X86-64": {
+		"details": "Generic x86 64 bit",
+		"type": "5",
+		"build": "2203",
+		"config": ".config_x86-64",
+		"image1": "openwrt-x86-64-generic-ext4-combined.img.gz",
+		"image2": "openwrt-x86-64-generic-ext4-combined.img",
+		"image3": "openwrt-x86-64-generic-ext4-combined-efi.img.gz",
+		"image4": "openwrt-x86-64-generic-ext4-combined-efi.img",
+		"image5": "openwrt-x86-64-generic-kernel.bin",
+		"image6": "openwrt-x86-64-generic-rootfs.tar.gz",
+		"image7": "openwrt-x86-64-generic.manifest",
+		"image8": "packages",
+		"image9": "sha256sums",
+		"image10": "*.buildinfo",
+		"imagepath": "/x86/64/",
+		"mod": "x86-64",
+		"addons": ["readme.pdf"]
+	},
+	"WS1688-16": {
+		"details": "Huasifei WS1688AX-16",
+		"type": "1",
+		"build": "2102",
+		"package": "ext-huasifei",
+		"config": ".config_ws1688",
+		"image": "openwrt-ramips-mt7621-ws1688-squashfs-sysupgrade.bin",
+		"imagepath": "/ramips/mt7621/",
+		"mod": "Huasifei-WS1688AX-16",
+		"ext": "-upgrade.bin",
+		"addons": ["readme.pdf"],
+		"custom": {
+			"name": {
+				"model": "WS1688AX",
+				"hostname": "WS1688AX"
+			},
+			"wifi": {
+				"SSID2G": "wifi6-2.4g",
+				"SSID5G": "wifi6-5.8g",
+				"Password": ""
+			},
+			"image": {
+				"Material": "hua.png",
+				"Argon": "hua.png",
+				"Tomato": "hua.png"
+			},
+			"files": "/huasifei/files1688/"	
+		}
+	},
+	"WS1688-32": {
+		"details": "Huasifei WS1688AX-32",
+		"type": "1",
+		"build": "2102",
+		"package": "ext-huasifei",
+		"config": ".config_ws1688-32",
+		"image": "openwrt-ramips-mt7621-ws1688-32-squashfs-sysupgrade.bin",
+		"imagepath": "/ramips/mt7621/",
+		"mod": "Huasifei-WS1688AX-32",
+		"ext": "-upgrade.bin",
+		"addons": ["readme.pdf"],
+		"custom": {
+			"name": {
+				"model": "WS1688AX-32",
+				"hostname": "WS1688AX"
+			},
+			"wifi": {
+				"SSID2G": "wifi6-2.4g",
+				"SSID5G": "wifi6-5.8g",
+				"Password": ""
+			},
+			"image": {
+				"Material": "hua.png",
+				"Argon": "hua.png",
+				"Tomato": "hua.png"
+			},
+			"files": "/huasifei/files1688/"	
+		}
+	},
+	"RASPPI4": {
+		"details": "Raspberry Pi 4 SD",
+		"type": "3",
+		"build": "2102",
+		"config": ".config_rasppi4",
+		"prescript": "/target/linux/bcm27xx/image/sdcard.sh sd",
+		"image1": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img.gz",
+		"image2": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img",
+		"image3": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img.gz",
+		"image4": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img",
+		"imagepath": "/bcm27xx/bcm2711/",
+		"mod": "RaspberryPi-4-SD",
+		"ext1": "-ext4.img",
+		"ext2": "-squashfs.img",
+		"addons": ["readme.pdf"]
+	},
+	"RASPPI4USB": {
+		"details": "Raspberry Pi 4 USB",
+		"type": "3",
+		"build": "2102",
+		"config": ".config_rasppi4",
+		"prescript": "/target/linux/bcm27xx/image/sdcard.sh usb",
+		"postscript": "/target/linux/bcm27xx/image/sdcard.sh sd",
+		"image1": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img.gz",
+		"image2": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img",
+		"image3": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img.gz",
+		"image4": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img",
+		"imagepath": "/bcm27xx/bcm2711/",
+		"mod": "RaspberryPi-4-USB",
+		"ext1": "-ext4.img",
+		"ext2": "-squashfs.img",
+		"addons": ["readme.pdf"]
+	},
+	"RASPPICM4": {
+		"details": "Raspberry Pi CM4 SD",
+		"type": "3",
+		"build": "2102",
+		"config": ".config_rasppicm4",
+		"prescript": "/target/linux/bcm27xx/image/sdcard.sh sd",
+		"image1": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img.gz",
+		"image2": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img",
+		"image3": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img.gz",
+		"image4": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img",
+		"imagepath": "/bcm27xx/bcm2711/",
+		"mod": "RaspberryPi-CM4-SD",
+		"ext1": "-ext4.img",
+		"ext2": "-squashfs.img",
+		"addons": ["readme.pdf"]
+	},
+	"RASPPICM4USB": {
+		"details": "Raspberry Pi CM4-USB",
+		"type": "3",
+		"build": "2102",
+		"config": ".config_rasppicm4",
+		"prescript": "/target/linux/bcm27xx/image/sdcard.sh usb",
+		"postscript": "/target/linux/bcm27xx/image/sdcard.sh sd",
+		"image1": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img.gz",
+		"image2": "openwrt-bcm27xx-bcm2711-rpi-4-ext4-factory.img",
+		"image3": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img.gz",
+		"image4": "openwrt-bcm27xx-bcm2711-rpi-4-squashfs-sysupgrade.img",
+		"imagepath": "/bcm27xx/bcm2711/",
+		"mod": "RaspberryPi-CM4-USB",
+		"ext1": "-ext4.img",
+		"ext2": "-squashfs.img",
+		"addons": ["readme.pdf"]
 	}
 }

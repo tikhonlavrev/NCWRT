@@ -73,6 +73,7 @@ end
 	var cenable;
 	var modtype;
 	var locking = 0;
+	var simchecked = "0";
 	
 	function T77(uVid, uPid)
 	{
@@ -159,7 +160,41 @@ end
 				document.getElementById("modpin").value = pinn;
 				loadpin = "1";
 			} 
-
+			
+			simsel = rv.simsel;
+			simnum = rv.simnum;
+			
+			if ( simsel == "1" )
+			{
+				document.getElementById("simsection").style.visibility="visible";
+				document.getElementById("simsection").style.display="block";
+				if ( simnum == "0" )
+				{
+					document.getElementById("csim").innerHTML="----";
+				}
+				else
+				{
+					document.getElementById("csim").innerHTML="SIM #" + simnum;
+				}
+				if ( simchecked == "0" )
+				{
+					if ( simnum == "1" )
+					{
+						document.getElementById("sim1").checked = true;
+					}
+					else
+					{
+						document.getElementById("sim2").checked = true;
+					}
+					simchecked = "1";
+				}
+			}
+			else
+			{
+				document.getElementById("simsection").style.visibility="hidden";
+				document.getElementById("simsection").style.display="none";
+			}
+			
 			if ( stat == "0" )
 			{
 				bnds = "0" ;
@@ -176,6 +211,7 @@ end
 				document.getElementById("net2").style.display="none";
 				document.getElementById("net3").style.display="none";
 				document.getElementById("net4").style.display="none";
+				document.getElementById("net5").style.display="none";
 				document.getElementById("apply1").style.display="none";
 			
 				if ( gpio == "0" )
@@ -513,6 +549,9 @@ end
 				case "9":
 					mode = "<%:5G Only%>";
 				break;
+				case "11":
+					mode = "<%:Automatic%>";
+				break;
 				case "10":
 					mode = "<%:Changing Mode ...%>";
 					document.getElementById("apply1").value="<%:Applying Change%>";
@@ -529,6 +568,7 @@ end
 				document.getElementById("net2").style.display="none";
 				document.getElementById("net3").style.display="none";
 				document.getElementById("net4").style.display="none";
+				document.getElementById("net5").style.display="none";
 				document.getElementById("apply1").style.display="none";
 			}
 			if ( cell == "0" )
@@ -537,6 +577,7 @@ end
 				document.getElementById("net2").style.display="none";
 				document.getElementById("net3").style.display="none";
 				document.getElementById("net4").style.display="none";
+				document.getElementById("net5").style.display="none";
 				document.getElementById("apply1").style.display="none";
 			}
 			if ( cell == "1" )
@@ -546,6 +587,7 @@ end
 				document.getElementById("net2").style.display="none";
 				document.getElementById("net3").style.display="none";
 				document.getElementById("net4").style.display="none";
+				document.getElementById("net5").style.display="none";
 				document.getElementById("apply1").style.display="block";
 				document.getElementById("apply1").style.visibility="visible";
 			}
@@ -556,6 +598,7 @@ end
 				document.getElementById("net3").style.display="block";
 				document.getElementById("net3").style.visibility="visible";
 				document.getElementById("net4").style.display="none";
+				document.getElementById("net5").style.display="none";
 				document.getElementById("apply1").style.display="block";
 				document.getElementById("apply1").style.visibility="visible";
 			}
@@ -566,6 +609,7 @@ end
 				document.getElementById("net2").style.visibility="visible";
 				document.getElementById("net3").style.display="none";
 				document.getElementById("net4").style.display="none";
+				document.getElementById("net5").style.display="none";
 				document.getElementById("apply1").style.display="block";
 				document.getElementById("apply1").style.visibility="visible";
 			}
@@ -576,6 +620,18 @@ end
 				document.getElementById("net3").style.display="none";
 				document.getElementById("net4").style.display="block";
 				document.getElementById("net4").style.visibility="visible";
+				document.getElementById("net5").style.display="none";
+				document.getElementById("apply1").style.display="block";
+				document.getElementById("apply1").style.visibility="visible";
+			}
+			if ( cell == "5" )
+			{
+				document.getElementById("net1").style.display="none";
+				document.getElementById("net2").style.display="none";
+				document.getElementById("net3").style.display="none";
+				document.getElementById("net5").style.display="block";
+				document.getElementById("net5").style.visibility="visible";
+				document.getElementById("net4").style.display="none";
 				document.getElementById("apply1").style.display="block";
 				document.getElementById("apply1").style.visibility="visible";
 			}
@@ -822,6 +878,16 @@ end
 						document.getElementById("celllock3").style.display = "none";
 					} 
 					
+					enab = rv.mrestart;
+					if ( enab == "0" )
+					{
+						document.getElementById('enab').checked=false;
+					}
+					else
+					{
+						document.getElementById('enab').checked=true;
+					}
+
 				
 					var ix = -1;
 					var j = 1;
@@ -1456,6 +1522,9 @@ end
 			case "4":
 				nmode=document.getElementById("net4").value;
 				break;
+			case "5":
+				nmode=document.getElementById("net5").value;
+				break;
 		}
 		document.getElementById("netmode").innerHTML = "<%:Changing Mode ...%>";
 		document.getElementById("apply1").value="<%:Applying Change%>";
@@ -1959,13 +2028,22 @@ end
 	
 	function sndpin(event)
 	{
-	
+		rbtn = document.getElementById("sim1").checked;
+		if ( rbtn == true )
+		{
+			rval = document.getElementById("sim1").value;
+		}
+		else
+		{
+			rval = document.getElementById("sim2").value;
+		}
+		document.getElementById("attxt").value=rval;
+		simchecked = "0";
 	}
 	
 	function sendpin(btn)
 	{
 		var s = document.getElementById("modpin").value;
-		document.getElementById("attxt").value=s;
 		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "setpin")%>',
 			{ set: s },
 			function(x, rv)
@@ -1976,6 +2054,48 @@ end
 		return true;
 	}
 	
+	function enable(btn)
+	{
+		dx = 0;
+		if ( btn.checked == true )
+		{
+			dx = 1;
+		}
+		XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "setrestart")%>',
+			{ set: dx },
+			function()
+			{
+			}
+		);
+	}
+	
+	function changesim() 
+	{
+		rbtn = document.getElementById("sim1").checked;
+		if ( rbtn == true )
+		{
+			rval = document.getElementById("sim1").value;
+		}
+		else
+		{
+			rval = document.getElementById("sim2").value;
+		}
+		conf = confirm("<%:Modem will be restarted after SIM change\nContinue?%>")
+		if ( conf )
+		{
+			XHR.get('<%=luci.dispatcher.build_url("admin", "modem", "savesim")%>',
+			{ set: rval },
+				function()
+				{
+					document.getElementById("attxt").value=rval;
+					//simchecked = "0";
+				}
+			);
+		}
+		return;
+	}
+	
+	// <div id="simsection" style="visibility:hidden;display:none">
 //]]></script>
 
 <form method="post" action="<%=REQUEST_URI%>">
@@ -1983,6 +2103,7 @@ end
 <h2><a id="content" name="content"><%:Miscellaneous Modem Features%></a></h2>
 <div class="cbi-map-descr"><%:A Collection of Modem Features%></div>
 <head>
+	<link rel="stylesheet" href="<%=resource%>/buttons/buttons.css">
      <style>
       input {
         vertical-align: bottom;
@@ -2041,9 +2162,43 @@ end
 </fieldset>
 
 <% if nosms == 0 then %>
+<div id="simsection" style="visibility:hidden;display:none">
+<fieldset class="cbi-section" id="cbi-sim">
+	<legend><%:SIM Selection%></legend>
+	
+	<table width="700" border="0">
+		<tr>
+			<td width="100px" style="font-size: 20px" align="left">Currently Using : </td>
+			<td width="600px" style="font-size: 20px" align="left" id="csim"></td>
+		</tr>
+		<tr>
+			<td></td>
+			<td></td>
+		</tr>
+	</table>
+		
+	<table width="700" border="0">
+		<tr>
+			<td width="100px" style="font-size: 20px" align="center">SIM 1</td>
+			<td width="50px">
+				<input type="radio" id="sim1" name="simsel" value="1" style="height:20px; width:20px; vertical-align: middle;">
+			</td>
+			<td width="550px"><input type="button" id="chgesim" class="cbi-button cbi-button-apply" value="<%:Change SIM%>" onclick="return changesim()" /></td>
+		</tr>
+		<tr>
+			<td style="font-size: 20px" align="center">SIM 2</td>
+			<td>
+				<input type="radio" id="sim2" name="simsel" value="2" style="height:20px; width:20px; vertical-align: middle;">
+			</td>
+			<td></td>
+		</tr>
+	</table>
+</div>
+</fieldset>
+
 <fieldset class="cbi-section" id="cbi-term">
 	<legend><%:AT-Command Terminal%></legend>
-	
+
 	<div id="popup">
 		<table width="500" border="0">
 			<tr>
@@ -2165,10 +2320,21 @@ end
 	</table>
 	
 	<table width="700" border="0" id="tab6">
-	<tr>
+		<tr>
 		<td width="12%">&nbsp;</td>
 		<td width="20%"><input type="button" id="setbnd" class="cbi-button cbi-button-apply" value="<%:Lock Modem to Selected Bands%>" onclick="return lockbnd()" /></td>
 		<td width="68%">&nbsp;</td>
+		</tr>
+		<tr>
+			<td align="right">
+			<div>
+				<label class="switch">
+					<input type="checkbox" id="enab" onclick="enable(this)">
+					<span class="slider round"></span>
+				</label>
+			</div></td>
+			<td><div align="left" style="font-size : 18px; width: 100%; height: 25px;"><strong><%:Restart Modem after Locking%></strong></div></td>
+			<td>&nbsp;</td>
 		</tr>
 	</table>
 	
@@ -2361,6 +2527,9 @@ end
 			<option value="7"><%:4G Only%></option>
 			<option value="8"><%:4G & 5G : NSA Mode%></option>
 			<option value="9"><%:5G Only : SA Mode%></option>
+		</select>
+		<select style="visibility:hidden;width:auto" name="net_mode" id="net5">
+			<option value="11" selected="selected"><%:Automatic%></option>
 		</select>
 		</td>
 		<td><input style="visibility:hidden;" type="button" id="apply1" class="cbi-button cbi-button-apply" value="<%:Apply Mode Change%>" onclick="return applyc(this)" /></td>

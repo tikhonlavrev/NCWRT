@@ -2,8 +2,20 @@
 
 ROOTER=/usr/lib/rooter
 
+log() {
+	modlog "Celldata" "$@"
+}
+
 CURRMODEM=$1
 COMMPORT=$2
+idV=$(uci -q get modem.modem$CURRMODEM.idV)
+idP=$(uci -q get modem.modem$CURRMODEM.idP)
+cps="+COPS: "
+if [ "$idV" = 0e8d ]; then
+	if [ "$idP" = 7127 -o "$idP" = 7126 ]; then
+		cps="+COPS:"
+	fi
+fi
 
 if [ -e /etc/nocops ]; then
 	echo "0" > /tmp/block
@@ -22,13 +34,13 @@ OX=$OX" "$OY
 COPS="-"
 COPS_MCC="-"
 COPS_MNC="-"
-COPSX=$(echo $OXx | grep -o "+COPS: [01],0,.\+," | cut -d, -f3 | grep -o "[^\"]\+")
+COPSX=$(echo $OXx | grep -o "$cps""[01],0,.\+," | cut -d, -f3 | grep -o "[^\"]\+")
 
 if [ "x$COPSX" != "x" ]; then
 	COPS=$COPSX
 fi
 
-COPSX=$(echo $OX | grep -o "+COPS: [01],2,.\+," | cut -d, -f3 | grep -o "[^\"]\+")
+COPSX=$(echo $OX | grep -o "$cps""[01],2,.\+," | cut -d, -f3 | grep -o "[^\"]\+")
 
 if [ "x$COPSX" != "x" ]; then
 	COPS_MCC=${COPSX:0:3}
@@ -40,7 +52,7 @@ if [ "x$COPSX" != "x" ]; then
 fi
 
 if [ "$COPS" = "-" ]; then
-	COPS=$(echo "$O" | awk -F[\"] '/^\+COPS: 0,0/ {print $2}')
+	COPS=$(echo "$OX" | awk -F[\"] "/^\$cps"'0,0/ {print $1}')
 	if [ "x$COPS" = "x" ]; then
 		COPS="-"
 		COPS_MCC="-"
@@ -54,8 +66,10 @@ OX=$(echo "${OX//[ \"]/}")
 CID=""
 CID5=""
 RAT=""
+REGSTAT=""
 REGV=$(echo "$OX" | grep -o "+C5GREG:2,[0-9],[A-F0-9]\{2,6\},[A-F0-9]\{5,10\},[0-9]\{1,2\}")
 if [ -n "$REGV" ]; then
+	REGSTAT=$(echo "$REGV" | cut -d, -f2)
 	LAC5=$(echo "$REGV" | cut -d, -f3)
 	LAC5=$LAC5" ($(printf "%d" 0x$LAC5))"
 	CID5=$(echo "$REGV" | cut -d, -f4)
@@ -104,7 +118,9 @@ else
 		LAC=""
 	fi
 fi
-REGSTAT=$(echo "$REGV" | cut -d, -f2)
+if [ -z "$REGSTAT" ]; then
+	REGSTAT=$(echo "$REGV" | cut -d, -f2)
+fi
 if [ "$REGSTAT" == "5" -a "$COPS" != "-" ]; then
 	COPS_MNC=$COPS_MNC" (Roaming)"
 fi

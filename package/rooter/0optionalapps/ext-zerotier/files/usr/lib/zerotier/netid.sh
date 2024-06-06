@@ -7,15 +7,9 @@ log() {
 
 ID=$2
 
-log "$ID"
-
-if [ $ID = "xxxxxxxxxxxxxxxx" ]; then
-	uci set zerotier.zerotier.enabled='0'
-else
-	uci set zerotier.zerotier.enabled='1'
-fi
-
 uci delete zerotier.zerotier.join
 uci add_list zerotier.zerotier.join=$ID
 uci commit zerotier
+uci set custom.zerotier.networkid=$ID
+uci commit custom
 /etc/init.d/zerotier restart

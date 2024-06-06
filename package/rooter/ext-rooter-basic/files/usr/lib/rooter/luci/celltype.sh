@@ -194,7 +194,7 @@ quectel_type() {
 	if [ $EM20 ]; then
 		idVidP=$idV":"$idP"0"
 	fi
-	if [ "$idVidP" == "2c7c:0800" -o "$idVidP" == "2c7c:0620" -o "$idVidP" == "2c7c:030b" -o "$idVidP" == "2c7c:0801"  -o "$idVidP" == "2c7c:0900" ]; then
+	if [ "$idVidP" == "2c7c:0800" -o "$idVidP" == "2c7c:0620" -o "$idVidP" == "2c7c:030b" -o "$idVidP" == "2c7c:0801"  -o "$idVidP" == "2c7c:0900"  -o "$idVidP" == "2c7c:0122" ]; then
 		ATCMDD="AT+QNWPREFCFG=\"mode_pref\""
 		OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
 		QNSM=$(echo $OX | grep -o ",[AUTOLENR5GWCDM:]\+" | tr ',' ' ')
@@ -291,23 +291,45 @@ meig_type() {
 }
 
 telit_type() {
-	ATCMDD="AT^SYSCONFIG?"
-	OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
-	SCFG=$(echo $OX | grep -o "\^SYSCONFIG: [0-9]\{1,2\}" | grep -o "[0-9]\{1,2\}")
-	if [ -n "$SCFG" ]; then
-		PREF=$(echo $OX | grep -o "\^SYSCONFIG: 2,[0-9]" | grep -o ",[0-9]")
-		case $SCFG in
-		"13" )
-			NETMODE="3" ;;
-		"14" )
-			NETMODE="5" ;;
-		"17" )
-			NETMODE="7" ;;
-		* )
-			NETMODE="1" ;;
-		esac
-		uci set modem.modem$CURRMODEM.modemtype="8"
+	if [ "$idV" == "1e2d" ]; then
+		ATCMDD="AT^SLMODE?"
+		OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+		OX=$(echo $OX | tr -d ' ')
+		SCFG=$(echo $OX | grep -o "\^SLMODE:[01],[0-9]")
+		if [ -n "$SCFG" ]; then
+			RAT=${SCFG: -1}
+			case $RAT in
+			"1" )
+				NETMODE="5" ;;
+			"2" )
+				NETMODE="7" ;;
+			"4" )
+				NETMODE="9" ;;
+			"6" )
+				NETMODE="8" ;;
+			* )
+				NETMODE="1" ;;
+			esac
+		fi
+	else
+		ATCMDD="AT^SYSCONFIG?"
+		OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+		SCFG=$(echo $OX | grep -o "\^SYSCONFIG: [0-9]\{1,2\}" | grep -o "[0-9]\{1,2\}")
+		if [ -n "$SCFG" ]; then
+			PREF=$(echo $OX | grep -o "\^SYSCONFIG: 2,[0-9]" | grep -o ",[0-9]")
+			case $SCFG in
+			"13" )
+				NETMODE="3" ;;
+			"14" )
+				NETMODE="5" ;;
+			"17" )
+				NETMODE="7" ;;
+			* )
+				NETMODE="1" ;;
+			esac
+		fi
 	fi
+	uci set modem.modem$CURRMODEM.modemtype="8"
 	uci set modem.modem$CURRMODEM.netmode=$NETMODE
 	uci commit modem
 }
@@ -356,6 +378,38 @@ fibocom_type() {
 
 		fi
 	fi
+	uci set modem.modem$CURRMODEM.modemtype="9"
+	uci set modem.modem$CURRMODEM.netmode=$NETMODE
+	uci commit modem
+}
+
+fibocom350_type() {
+	NETMODE=""
+	ATCMDD='AT+GTACT?'
+	OX=$($ROOTER/gcom/gcom-locked "$COMMPORT" "run-at.gcom" "$CURRMODEM" "$ATCMDD")
+	OXX=$(echo $OX" " | grep "+GTACT:" | tr -d '"' | tr " " ",")
+	n=${#OXX}
+	let nn=$n-22
+	NOX=${OXX:18:$nn}
+	L1=$(echo $NOX | cut -d, -f1)
+	L2=$(echo $NOX | cut -d, -f2)
+	L3=$(echo $NOX | cut -d, -f3)
+	st=6
+	if [ "$L1" -gt 9 ]; then
+		st=7
+	fi
+	BND=${NOX:$st}
+	case $L1 in
+	"17" )
+		NETMODE="11" ;;
+	"2" )
+		NETMODE="7" ;;
+	"14" )
+		NETMODE="9" ;;
+	* )
+		NETMODE="1" ;;
+	esac
+	NETMODE="11"
 	uci set modem.modem$CURRMODEM.modemtype="9"
 	uci set modem.modem$CURRMODEM.netmode=$NETMODE
 	uci commit modem
@@ -484,6 +538,9 @@ case $idV in
 	if [ $idP = "095a" ]; then
 		fibocom_type
 	fi
+	;;
+"0e8d" )
+	fibocom350_type
 	;;
 "0408" )
 	quanta_type

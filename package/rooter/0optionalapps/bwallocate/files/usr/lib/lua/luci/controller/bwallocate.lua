@@ -19,4 +19,10 @@ function index()
 			end
 		end
 	end
+	
+end
+
+function action_bwreset()
+	local set = luci.http.formvalue("set")
+	os.execute("/usr/lib/bwmon/bwreset.sh \"" .. set .. "\"")
 end
